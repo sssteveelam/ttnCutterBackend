@@ -22,4 +22,5 @@ def create_log(log: LogSchema, db: Session = Depends(get_db)):
 
 @router.get("/logs")
 def get_logs(userId: str, db: Session = Depends(get_db)):
-    return get_logs_service(db, userId)
+    logs = get_logs_service(db, userId)
+    return logs

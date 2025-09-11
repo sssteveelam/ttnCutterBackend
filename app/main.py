@@ -9,21 +9,13 @@ app = FastAPI()
 # Tạo bảng trong DB khi khởi động
 Base.metadata.create_all(bind=engine)
 
-app.include_router(logs_router, prefix="/api")
-
-origins = [
-    "http://localhost:3000",
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # List of allowed origins
-    allow_credentials=True,  # Allow cookies and other credentials
-    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_origins=["*"],  # Cho tất cả origin (FE)
+    allow_credentials=True,
+    allow_methods=["*"],  # Cho mọi phương thức (GET, POST,...)
+    allow_headers=["*"],  # Cho mọi header
 )
 
-
-@app.get("/")
-def root():
-    return {"message": "Backend is running"}
+app.include_router(logs_router, prefix="/api")
