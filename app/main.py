@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from app.api.routes_logs import router as logs_router
 from app.db import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes_download import router as download_router
+from fastapi.staticfiles import StaticFiles
 
 
 app = FastAPI()
@@ -19,3 +21,5 @@ app.add_middleware(
 )
 
 app.include_router(logs_router, prefix="/api")
+app.include_router(download_router, prefix="/api")
+app.mount("/videos", StaticFiles(directory="videos_temp"), name="videos")
