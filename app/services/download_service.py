@@ -6,7 +6,9 @@ import os
 VIDEO_DIR = "videos_temp"
 
 
-def download_youtube_video(url: str, media_type: str = "video") -> dict:
+def download_youtube_video(
+    url: str, media_type: str = "video", format_id: str = None
+) -> dict:
     if not os.path.exists(VIDEO_DIR):
         os.makedirs(VIDEO_DIR)
 
@@ -16,7 +18,10 @@ def download_youtube_video(url: str, media_type: str = "video") -> dict:
         "noplaylist": True,
     }
 
-    if media_type == "audio":
+    if format_id:
+        # ydl_opts["format"] = format_id
+        ydl_opts.update({"format": format_id})
+    elif media_type == "audio":
         ydl_opts.update(
             {"format": "bestaudio", "extract_audio": True, "audio_format": mp3}
         )
