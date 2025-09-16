@@ -9,13 +9,12 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-# Tạo bảng trong DB khi khởi động
 Base.metadata.create_all(bind=engine)
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Cho tất cả origin (FE)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Cho mọi phương thức (GET, POST,...)
     allow_headers=["*"],  # Cho mọi header
@@ -24,4 +23,4 @@ app.add_middleware(
 app.include_router(logs_router, prefix="/api")
 app.include_router(download_router, prefix="/api")
 app.include_router(format_router, prefix="/api")
-app.mount("/videos", StaticFiles(directory="videos_temp"), name="videos")
+app.mount("/videos", StaticFiles(directory="temp_videos"), name="videos")
