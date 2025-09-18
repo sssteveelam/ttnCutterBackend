@@ -30,6 +30,7 @@ def find_best_audio_format_id(formats: list) -> str | None:
 def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
 
     video_info = get_video_info(url)
+
     formats = video_info.get("formats", [])
 
     selected_format = next((f for f in formats if f["format_id"] == format_id), None)
@@ -44,8 +45,15 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
     safe_filename = "".join(
         [c for c in video_title if c.isalpha() or c.isdigit() or c.isspace()]
     ).rstrip()
-    final_ext = "mp3" if not has_video and has_audio else "mp4"
+
+    ext = selected_format.get("ext") or "mp4"
+    final_ext = ext
+    # print("final_ext->", final_ext)
+    if not has_video and has_audio and ext != "mp3":
+        final_ext = "mp3"
+
     final_filename = f"{safe_filename}.{final_ext}"
+    print("final_filename->", final_filename)
 
     session_id = str(uuid.uuid4())
 
