@@ -87,10 +87,26 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
         final_output_path = VIDEO_DIR / f"{session_id}.mp4"
 
         subprocess.run(
-            ["yt-dlp", "-f", format_id, "-o", str(video_path), str(url)], check=True
+            [
+                "yt-dlp",
+                "-f",
+                format_id,
+                "-o",
+                str(video_path),
+                str(url),
+            ],
+            check=True,
         )
         subprocess.run(
-            ["yt-dlp", "-f", best_audio_id, "-o", str(audio_path), str(url)], check=True
+            [
+                "yt-dlp",
+                "-f",
+                best_audio_id,
+                "-o",
+                str(audio_path),
+                str(url),
+            ],
+            check=True,
         )
 
         ffmpeg_cmd = [
