@@ -1,5 +1,5 @@
 # app/api/routes_download.py
-from fastapi import APIRouter, HTTPException, FastAPI, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, FastAPI, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import urllib.parse
@@ -7,6 +7,8 @@ from pydantic import BaseModel
 from app.services.download_service import download_and_merge
 from app.services import download_service as services
 import os
+from urllib.parse import urlparse
+from pydantic import BaseModel, field_validator
 
 router = APIRouter()
 
@@ -18,7 +20,9 @@ class DownloadRequest(BaseModel):
 
 @router.post("/download")
 async def download_video(request: DownloadRequest, background_tasks: BackgroundTasks):
+
     try:
+
         file_path, final_filename = services.download_and_merge(
             request.url, request.format_id
         )

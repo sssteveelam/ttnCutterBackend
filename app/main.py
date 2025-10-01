@@ -4,6 +4,7 @@ from app.db import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes_download import router as download_router
 from app.api.routes_formats import router as format_router
+from app.api.routes_thumbnail import router as thumb_router
 from fastapi.staticfiles import StaticFiles
 
 
@@ -24,4 +25,5 @@ app.add_middleware(
 app.include_router(logs_router, prefix="/api")
 app.include_router(download_router, prefix="/api")
 app.include_router(format_router, prefix="/api")
+app.include_router(thumb_router, prefix="/api")
 app.mount("/videos", StaticFiles(directory="temp_videos"), name="videos")

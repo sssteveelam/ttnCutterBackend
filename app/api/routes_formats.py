@@ -13,6 +13,7 @@ class FormatRequest(BaseModel):
 @router.post("/formats")
 def list_formats(data: FormatRequest):
     try:
+        print(data)
         return get_formats(data.url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
