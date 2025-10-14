@@ -99,12 +99,14 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
         final_url,
     ]
 
-    print(f"Dang thuc thi lenh: {" ".join(download_command)}")
+    cmd_str = " ".join(download_command)
+    print(f"Dang thuc thi lenh: {cmd_str}")
+    
     subprocess.run(download_command, check=True)
 
     final_path = OUTPUT_DIR / f"{session_id}.mp4"
 
     if not final_path.exists():
         raise FileNotFoundError("Không tìm thấy file video sau khi tải và merge.")
-
+            
     return final_path, final_filename
