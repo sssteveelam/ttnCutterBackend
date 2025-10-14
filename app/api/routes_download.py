@@ -18,7 +18,7 @@ class DownloadRequest(BaseModel):
     format_id: str = None
 
 
-@router.post("/download")
+@router.post("/download") 
 async def download_video(request: DownloadRequest, background_tasks: BackgroundTasks):
 
     try:
