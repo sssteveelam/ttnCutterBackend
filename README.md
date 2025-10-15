@@ -1,4 +1,24 @@
 
+## Installing dependencies locally
+
+If you are running the project outside of Docker you need to install the Python
+dependencies listed in `requirements.txt`.
+
+```bash
+# (optional) create and activate a virtual environment first
+python -m venv .venv
+source .venv/bin/activate
+
+# upgrade pip so binary wheels such as `curl_cffi` install cleanly
+python -m pip install --upgrade pip
+
+# install the packages declared in requirements.txt
+python -m pip install -r requirements.txt
+```
+
+After installing the dependencies you can start the API with `uvicorn
+app.main:app --reload` for local development.
+
 ## Deploying to Render
 
 1. Create a new **Web Service** on Render and connect this repository.
