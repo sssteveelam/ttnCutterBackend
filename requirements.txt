@@ -4,3 +4,4 @@ sqlalchemy
 pydantic
 requests
 yt-dlp
+curl_cffi

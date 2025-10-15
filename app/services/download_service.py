@@ -21,6 +21,7 @@ YT_DLP_RETRIES = max(1, int(os.getenv("YT_DLP_MAX_ATTEMPTS", "3")))
 YT_DLP_BACKOFF_INITIAL = float(os.getenv("YT_DLP_BACKOFF_INITIAL", "2"))
 YT_DLP_BACKOFF_MULTIPLIER = float(os.getenv("YT_DLP_BACKOFF_MULTIPLIER", "2"))
 YT_DLP_BACKOFF_JITTER = float(os.getenv("YT_DLP_BACKOFF_JITTER", "1"))
+YT_DLP_IMPERSONATE = os.getenv("YT_DLP_IMPERSONATE")
 
 
 def _is_yt_dlp(command: list[str]) -> bool:
@@ -43,6 +44,9 @@ def _apply_rate_limits(command: list[str]) -> list[str]:
 
     if YT_DLP_LIMIT_RATE:
         throttled_command.extend(["--limit-rate", YT_DLP_LIMIT_RATE])
+
+    if YT_DLP_IMPERSONATE and "--impersonate" not in command:
+        throttled_command.extend(["--impersonate", YT_DLP_IMPERSONATE])
 
     throttled_command.extend(command[1:])
     return throttled_command
