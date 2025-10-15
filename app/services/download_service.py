@@ -28,7 +28,9 @@ def _is_yt_dlp(command: list[str]) -> bool:
     return bool(command) and Path(command[0]).name == "yt-dlp"
 
 
-def _apply_rate_limits(command: list[str]) -> list[str]:
+def _apply_rate_limits(
+    command: list[str], *, impersonate: str | None = None
+) -> list[str]:
     """Inject throttling flags for yt-dlp commands when configured."""
 
     if not _is_yt_dlp(command):
@@ -45,8 +47,9 @@ def _apply_rate_limits(command: list[str]) -> list[str]:
     if YT_DLP_LIMIT_RATE:
         throttled_command.extend(["--limit-rate", YT_DLP_LIMIT_RATE])
 
-    if YT_DLP_IMPERSONATE and "--impersonate" not in command:
-        throttled_command.extend(["--impersonate", YT_DLP_IMPERSONATE])
+    selected_impersonate = (impersonate or "").strip() or YT_DLP_IMPERSONATE
+    if selected_impersonate and "--impersonate" not in command:
+        throttled_command.extend(["--impersonate", selected_impersonate])
 
     throttled_command.extend(command[1:])
     return throttled_command
@@ -65,10 +68,12 @@ def _should_retry_yt_dlp(message: str) -> bool:
     return any(marker in lowered for marker in retry_markers)
 
 
-def _run_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
+def _run_command(
+    command: list[str], *, impersonate: str | None = None, **kwargs
+) -> subprocess.CompletedProcess:
     """Run a subprocess command and raise DownloadError with helpful context."""
 
-    effective_command = _apply_rate_limits(command)
+    effective_command = _apply_rate_limits(command, impersonate=impersonate)
     attempts = 1
     if _is_yt_dlp(effective_command):
         attempts = YT_DLP_RETRIES
@@ -105,10 +110,14 @@ VIDEO_DIR = Path("./temp_videos")
 VIDEO_DIR.mkdir(exist_ok=True)
 
 
-def get_video_info(url: str) -> dict:
+def get_video_info(url: str, impersonate_client: str | None = None) -> dict:
     command = ["yt-dlp", "-j", str(url)]
     result = _run_command(
-        command, capture_output=True, text=True, encoding="utf-8"
+        command,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        impersonate=impersonate_client,
     )
     return json.loads(result.stdout)
 
@@ -124,9 +133,11 @@ def find_best_audio_format_id(formats: list) -> str | None:
     return best_audio["format_id"] if best_audio else None
 
 
-def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
+def download_and_merge(
+    url: str, format_id: str, impersonate_client: str | None = None
+) -> tuple[Path, str]:
 
-    video_info = get_video_info(url)
+    video_info = get_video_info(url, impersonate_client)
 
     formats = video_info.get("formats", [])
 
@@ -157,7 +168,7 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
     if (has_video and has_audio) or (not has_video and has_audio):
         output_path = VIDEO_DIR / f"{session_id}.{selected_format.get('ext', 'tmp')}"
         command = ["yt-dlp", "-f", format_id, "-o", str(output_path), str(url)]
-        _run_command(command)
+        _run_command(command, impersonate=impersonate_client)
         if not has_video and has_audio and final_ext == "mp3":
             final_output_path = VIDEO_DIR / f"{session_id}.mp3"
             ffmpeg_cmd = [
@@ -192,6 +203,7 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
                 str(video_path),
                 str(url),
             ],
+            impersonate=impersonate_client,
         )
         _run_command(
             [
@@ -202,6 +214,7 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
                 str(audio_path),
                 str(url),
             ],
+            impersonate=impersonate_client,
         )
 
         ffmpeg_cmd = [
