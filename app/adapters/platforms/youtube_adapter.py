@@ -4,6 +4,7 @@ import json
 import uuid
 from pathlib import Path
 import re
+from app.services.download_service import get_video_info
 
 
 YOUTUBE_DIR = Path("./temp_videos/youtube")
@@ -16,30 +17,23 @@ def sanitize_filename(filename: str) -> str:
     return cleaned[:100]
 
 
-def get_formats(url: str) -> list[dict]:
-    command = ["yt-dlp", "-j", url]
-    result = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        check=True,
-        encoding="utf-8",
-    )
-    info = json.loads(result.stdout)
+def get_formats(url: str, impersonate_client: str | None = None) -> list[dict]:
+    video_info = get_video_info(url, impersonate_client)
 
     formats = []
-    for f in info.get("formats", []):
+    for f in video_info.get("formats", []):
         formats.append(
             {
                 "format_id": f["format_id"],
-                "ext": f.get("ext", ""),
-                "vcodec": f.get("vcodec", "none"),
-                "acodec": f.get("acodec", "none"),
+                "ext": f["ext"],
+                "vcodec": f["vcodec"],
+                "acodec": f["acodec"],
                 "resolution": f.get("resolution") or f.get("height"),
                 "note": f.get("format_note", ""),
                 "filesize": f.get("filesize") or 0,
             }
         )
+
     return formats
 
 

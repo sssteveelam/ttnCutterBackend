@@ -8,12 +8,13 @@ router = APIRouter()
 
 class FormatRequest(BaseModel):
     url: str
+    impersonate_client: str | None = None
 
 
 @router.post("/formats")
 def list_formats(data: FormatRequest):
     try:
         print(data)
-        return get_formats(data.url)
+        return get_formats(data.url, data.impersonate_client)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
