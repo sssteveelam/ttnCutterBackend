@@ -12,3 +12,22 @@
 
 The application automatically creates the `temp_videos` directory on startup so the
 static files route works in the Render container filesystem.
+
+### Throttling yt-dlp to avoid rate limits
+
+Some providers (such as YouTube) can temporarily block repeated downloads from the
+same IP address. Configure the following optional environment variables on Render
+to slow down requests when you notice HTTP 429 or "Too Many Requests" errors:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `YT_DLP_SLEEP_INTERVAL` | `0` | Minimum seconds to sleep between yt-dlp HTTP requests. |
+| `YT_DLP_MAX_SLEEP_INTERVAL` | `YT_DLP_SLEEP_INTERVAL` | Maximum seconds to sleep (enables random jitter when greater than the minimum). |
+| `YT_DLP_LIMIT_RATE` | _unset_ | Limit download bandwidth (e.g. `1M` for 1 MiB/s). |
+| `YT_DLP_MAX_ATTEMPTS` | `3` | Maximum attempts for yt-dlp commands when rate limits are detected. |
+| `YT_DLP_BACKOFF_INITIAL` | `2` | Initial backoff delay in seconds before retrying. |
+| `YT_DLP_BACKOFF_MULTIPLIER` | `2` | Multiplier applied to the delay after each retry. |
+| `YT_DLP_BACKOFF_JITTER` | `1` | Random jitter (+/- seconds) added to each delay to avoid bursts. |
+
+Set only the variables you need—leaving them unset keeps the existing fast
+behaviour for development.

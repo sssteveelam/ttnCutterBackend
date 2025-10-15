@@ -1,6 +1,9 @@
 # services.py
-import subprocess
 import json
+import os
+import random
+import subprocess
+import time
 import uuid
 from pathlib import Path
 
@@ -9,21 +12,90 @@ class DownloadError(RuntimeError):
     """Raised when an external download/processing command fails."""
 
 
+YT_DLP_MIN_SLEEP = float(os.getenv("YT_DLP_SLEEP_INTERVAL", "0"))
+YT_DLP_MAX_SLEEP = float(
+    os.getenv("YT_DLP_MAX_SLEEP_INTERVAL", str(YT_DLP_MIN_SLEEP))
+)
+YT_DLP_LIMIT_RATE = os.getenv("YT_DLP_LIMIT_RATE")
+YT_DLP_RETRIES = max(1, int(os.getenv("YT_DLP_MAX_ATTEMPTS", "3")))
+YT_DLP_BACKOFF_INITIAL = float(os.getenv("YT_DLP_BACKOFF_INITIAL", "2"))
+YT_DLP_BACKOFF_MULTIPLIER = float(os.getenv("YT_DLP_BACKOFF_MULTIPLIER", "2"))
+YT_DLP_BACKOFF_JITTER = float(os.getenv("YT_DLP_BACKOFF_JITTER", "1"))
+
+
+def _is_yt_dlp(command: list[str]) -> bool:
+    return bool(command) and Path(command[0]).name == "yt-dlp"
+
+
+def _apply_rate_limits(command: list[str]) -> list[str]:
+    """Inject throttling flags for yt-dlp commands when configured."""
+
+    if not _is_yt_dlp(command):
+        return list(command)
+
+    throttled_command = [command[0]]
+
+    if YT_DLP_MIN_SLEEP > 0:
+        throttled_command.extend(["--sleep-interval", str(YT_DLP_MIN_SLEEP)])
+        max_sleep = max(YT_DLP_MIN_SLEEP, YT_DLP_MAX_SLEEP)
+        if max_sleep > YT_DLP_MIN_SLEEP:
+            throttled_command.extend(["--max-sleep-interval", str(max_sleep)])
+
+    if YT_DLP_LIMIT_RATE:
+        throttled_command.extend(["--limit-rate", YT_DLP_LIMIT_RATE])
+
+    throttled_command.extend(command[1:])
+    return throttled_command
+
+
+def _should_retry_yt_dlp(message: str) -> bool:
+    lowered = message.lower()
+    retry_markers = [
+        "http error 429",
+        "too many requests",
+        "temporarily unavailable",
+        "sign in to confirm you're not a bot",
+        "quota exceeded",
+        "rate limit",
+    ]
+    return any(marker in lowered for marker in retry_markers)
+
+
 def _run_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
     """Run a subprocess command and raise DownloadError with helpful context."""
 
-    try:
-        return subprocess.run(command, check=True, **kwargs)
-    except subprocess.CalledProcessError as exc:
-        stderr = exc.stderr or ""
-        stdout = exc.stdout or ""
-        message = (stderr or stdout).strip()
-        if not message:
-            message = str(exc)
-        command_preview = " ".join(map(str, command))
-        raise DownloadError(
-            f"Không thể thực thi lệnh '{command_preview}'. Chi tiết: {message}"
-        ) from exc
+    effective_command = _apply_rate_limits(command)
+    attempts = 1
+    if _is_yt_dlp(effective_command):
+        attempts = YT_DLP_RETRIES
+
+    backoff = YT_DLP_BACKOFF_INITIAL
+
+    for attempt in range(1, attempts + 1):
+        try:
+            return subprocess.run(effective_command, check=True, **kwargs)
+        except subprocess.CalledProcessError as exc:
+            stderr = exc.stderr or ""
+            stdout = exc.stdout or ""
+            message = (stderr or stdout).strip()
+            if not message:
+                message = str(exc)
+            if (
+                attempt < attempts
+                and _is_yt_dlp(effective_command)
+                and _should_retry_yt_dlp(message)
+            ):
+                sleep_for = max(
+                    0,
+                    backoff + random.uniform(-YT_DLP_BACKOFF_JITTER, YT_DLP_BACKOFF_JITTER),
+                )
+                time.sleep(sleep_for)
+                backoff *= YT_DLP_BACKOFF_MULTIPLIER
+                continue
+            command_preview = " ".join(map(str, effective_command))
+            raise DownloadError(
+                f"Không thể thực thi lệnh '{command_preview}'. Chi tiết: {message}"
+            ) from exc
 
 VIDEO_DIR = Path("./temp_videos")
 VIDEO_DIR.mkdir(exist_ok=True)
