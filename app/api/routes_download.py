@@ -1,11 +1,10 @@
 # app/api/routes_download.py
-from fastapi import APIRouter, HTTPException, FastAPI, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import urllib.parse
 from pydantic import BaseModel
-from app.services.download_service import download_and_merge
-from app.services import download_service as services
+from app.services.download_service import download_and_merge, DownloadError
 import os
 
 router = APIRouter()
@@ -19,9 +18,7 @@ class DownloadRequest(BaseModel):
 @router.post("/download")
 async def download_video(request: DownloadRequest, background_tasks: BackgroundTasks):
     try:
-        file_path, final_filename = services.download_and_merge(
-            request.url, request.format_id
-        )
+        file_path, final_filename = download_and_merge(request.url, request.format_id)
 
         # print("file_path, final_filename = ", file_path, final_filename)
 
@@ -40,6 +37,9 @@ async def download_video(request: DownloadRequest, background_tasks: BackgroundT
             headers=headers,
         )
 
+    except DownloadError as e:
+        print(f"Lỗi trong quá trình download/merge: {e}")
+        raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         print(f"Lỗi trong quá trình download/merge: {e}")
         raise HTTPException(status_code=500, detail=str(e))

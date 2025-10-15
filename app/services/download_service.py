@@ -4,14 +4,35 @@ import json
 import uuid
 from pathlib import Path
 
+
+class DownloadError(RuntimeError):
+    """Raised when an external download/processing command fails."""
+
+
+def _run_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
+    """Run a subprocess command and raise DownloadError with helpful context."""
+
+    try:
+        return subprocess.run(command, check=True, **kwargs)
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr or ""
+        stdout = exc.stdout or ""
+        message = (stderr or stdout).strip()
+        if not message:
+            message = str(exc)
+        command_preview = " ".join(map(str, command))
+        raise DownloadError(
+            f"Không thể thực thi lệnh '{command_preview}'. Chi tiết: {message}"
+        ) from exc
+
 VIDEO_DIR = Path("./temp_videos")
 VIDEO_DIR.mkdir(exist_ok=True)
 
 
 def get_video_info(url: str) -> dict:
     command = ["yt-dlp", "-j", str(url)]
-    result = subprocess.run(
-        command, capture_output=True, text=True, check=True, encoding="utf-8"
+    result = _run_command(
+        command, capture_output=True, text=True, encoding="utf-8"
     )
     return json.loads(result.stdout)
 
@@ -60,7 +81,7 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
     if (has_video and has_audio) or (not has_video and has_audio):
         output_path = VIDEO_DIR / f"{session_id}.{selected_format.get('ext', 'tmp')}"
         command = ["yt-dlp", "-f", format_id, "-o", str(output_path), str(url)]
-        subprocess.run(command, check=True)
+        _run_command(command)
         if not has_video and has_audio and final_ext == "mp3":
             final_output_path = VIDEO_DIR / f"{session_id}.mp3"
             ffmpeg_cmd = [
@@ -72,7 +93,7 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
                 "libmp3lame",
                 str(final_output_path),
             ]
-            subprocess.run(ffmpeg_cmd, check=True)
+            _run_command(ffmpeg_cmd)
             # output_path.unlink()
             return final_output_path, final_filename
         return output_path, final_filename
@@ -86,7 +107,7 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
         audio_path = VIDEO_DIR / f"{session_id}_audio.tmp"
         final_output_path = VIDEO_DIR / f"{session_id}.mp4"
 
-        subprocess.run(
+        _run_command(
             [
                 "yt-dlp",
                 "-f",
@@ -95,9 +116,8 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
                 str(video_path),
                 str(url),
             ],
-            check=True,
         )
-        subprocess.run(
+        _run_command(
             [
                 "yt-dlp",
                 "-f",
@@ -106,7 +126,6 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
                 str(audio_path),
                 str(url),
             ],
-            check=True,
         )
 
         ffmpeg_cmd = [
@@ -119,7 +138,7 @@ def download_and_merge(url: str, format_id: str) -> tuple[Path, str]:
             "copy",
             str(final_output_path),
         ]
-        subprocess.run(ffmpeg_cmd, check=True)
+        _run_command(ffmpeg_cmd)
 
         video_path.unlink()
         audio_path.unlink()
