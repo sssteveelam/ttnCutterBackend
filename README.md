@@ -28,6 +28,12 @@ to slow down requests when you notice HTTP 429 or "Too Many Requests" errors:
 | `YT_DLP_BACKOFF_INITIAL` | `2` | Initial backoff delay in seconds before retrying. |
 | `YT_DLP_BACKOFF_MULTIPLIER` | `2` | Multiplier applied to the delay after each retry. |
 | `YT_DLP_BACKOFF_JITTER` | `1` | Random jitter (+/- seconds) added to each delay to avoid bursts. |
+| `YT_DLP_IMPERSONATE` | _unset_ | When set, adds `--impersonate <value>` to every yt-dlp command (e.g. `chrome:windows-10`) so providers see traffic as a browser. |
 
 Set only the variables you need—leaving them unset keeps the existing fast
 behaviour for development.
+
+> **Note:** yt-dlp's impersonation feature relies on the optional
+> [curl_cffi](https://github.com/yifeikong/curl_cffi) dependency. This project
+> ships with curl_cffi so setting `YT_DLP_IMPERSONATE` immediately enables the
+> more browser-like TLS fingerprint.
