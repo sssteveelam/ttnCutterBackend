@@ -12,14 +12,14 @@ def detect_platform(url: str) -> str:
     return "unknown"
 
 
-def get_formats(url: str) -> list[dict]:
+def get_formats(url: str, impersonate_client: str) -> list[dict]:
     platform = detect_platform(url)
     print(platform)
     if platform == "youtube":
-        return youtube_adapter.get_formats(url)
+        return youtube_adapter.get_formats(url,impersonate_client)
     elif platform == "facebook":
-        return facebook_adapter.get_formats(url)
+        return facebook_adapter.get_formats(url,impersonate_client)
     elif platform == "tiktok":
-        return tiktok_adapter.get_formats(url)
+        return tiktok_adapter.get_formats(url,impersonate_client)
     else:
         raise ValueError("Nền tảng chưa được hỗ trợ")
