@@ -57,3 +57,13 @@ behaviour for development.
 > [curl_cffi](https://github.com/yifeikong/curl_cffi) dependency. This project
 > ships with curl_cffi so setting `YT_DLP_IMPERSONATE` immediately enables the
 > more browser-like TLS fingerprint.
+
+### Overriding impersonation per request
+
+Front-end clients can override the impersonation setting for a single download by
+including `impersonate_client` in the POST body sent to `/api/download`. When the
+field is present (for example the UI defaults to `"chrome"`), the backend adds
+`--impersonate <value>` to the yt-dlp commands for that request even if the
+`YT_DLP_IMPERSONATE` environment variable is not configured. If neither the
+request body nor the environment variable specifies an impersonation target, the
+commands run without the flag just like before.

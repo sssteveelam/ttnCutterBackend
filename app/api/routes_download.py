@@ -13,12 +13,15 @@ router = APIRouter()
 class DownloadRequest(BaseModel):
     url: str
     format_id: str = None
+    impersonate_client: str | None = None
 
 
 @router.post("/download")
 async def download_video(request: DownloadRequest, background_tasks: BackgroundTasks):
     try:
-        file_path, final_filename = download_and_merge(request.url, request.format_id)
+        file_path, final_filename = download_and_merge(
+            request.url, request.format_id, request.impersonate_client
+        )
 
         # print("file_path, final_filename = ", file_path, final_filename)
 
