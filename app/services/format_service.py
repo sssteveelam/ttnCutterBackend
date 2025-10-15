@@ -1,29 +1,21 @@
-import yt_dlp
+from app.services.download_service import get_video_info
 
 
-def get_formats(url: str) -> list[dict]:
-    ydl_opts = {
-        "skip_download": True,
-        "forcejson": True,
-        "simulate": True,
-    }
+def get_formats(url: str, impersonate_client: str | None = None) -> list[dict]:
+    video_info = get_video_info(url, impersonate_client)
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+    formats = []
+    for f in video_info.get("formats", []):
+        formats.append(
+            {
+                "format_id": f["format_id"],
+                "ext": f["ext"],
+                "vcodec": f["vcodec"],
+                "acodec": f["acodec"],
+                "resolution": f.get("resolution") or f.get("height"),
+                "note": f.get("format_note", ""),
+                "filesize": f.get("filesize") or 0,
+            }
+        )
 
-        formats = []
-        for f in info.get("formats", []):
-
-            formats.append(
-                {
-                    "format_id": f["format_id"],
-                    "ext": f["ext"],
-                    "vcodec": f["vcodec"],
-                    "acodec": f["acodec"],
-                    "resolution": f.get("resolution") or f.get("height"),
-                    "note": f.get("format_note", ""),
-                    "filesize": f.get("filesize") or 0,
-                }
-            )
-
-        return formats
+    return formats

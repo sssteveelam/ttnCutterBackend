@@ -67,3 +67,8 @@ field is present (for example the UI defaults to `"chrome"`), the backend adds
 `YT_DLP_IMPERSONATE` environment variable is not configured. If neither the
 request body nor the environment variable specifies an impersonation target, the
 commands run without the flag just like before.
+
+The same optional field is also accepted by `/api/formats`, so clients can request
+format metadata with the exact impersonation profile they'll later use for the
+download. This keeps both steps aligned when targeting providers that inspect the
+TLS fingerprint.
